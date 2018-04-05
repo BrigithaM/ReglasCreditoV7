@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.selsa</groupId>
+  <artifactId>Credito</artifactId>
+  <version>1.0.0</version>
+  <name>Credito</name>
+  <description>Definición de las reglas de negocio que se utilizarán en la nueva versión de crédito V7.</description>
+  <repositories>
+    <repository>
+      <id>guvnor-m2-repo</id>
+      <name>Guvnor M2 Repo</name>
+      <url>http://localhost:8080/kie-drools-wb-7.6.0.Final-wildfly10/maven2/</url>
+    </repository>
+  </repositories>
+</project>

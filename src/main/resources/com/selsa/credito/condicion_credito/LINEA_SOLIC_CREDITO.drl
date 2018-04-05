@@ -1,0 +1,484 @@
+package com.selsa.credito.condicion_credito;
+
+rule "LINEA_SOLIC_CREDITO"
+    salience 50
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+		Prospecto : PROSPECTO_SOLICITUD_CREDITO( CODIGO_DESTINO_DINERO_PROSPECTO_SOLICITUD_CREDITO == "VIVIENDA USADA" , CODIGO_ROL_ACTOR_PROSPECTO_SOLICITUD_CREDITO == "ASOCIADO" )
+// Prospecto : PROSPECTO_SOLICITUD_CREDITO($CODIGO_PROSPECTO_SOLICITUD_CRE : CODIGO_PROSPECTO) 
+//Llave primaria pero en el momento de la simulacion o cuando se lee no se sabe		
+	then
+		insert( CONDICIONES_SUGERIDAS_PROSPECT ) {
+				setCODIGO_LINEA_PROSPECTO_SOLICITUD_CREDITO( "VIVIENDA" ) 
+//Arreglar esta asignación porque es una lista la accion pero en el objeto de datos
+//es un solo registro
+				
+		}				
+end
+
+rule "ORIGEN_INGRESOS_ORDINARIA_SOLIC_CREDITO"
+    salience 49
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1")
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO
+//DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+	    CLIENTE_VINCULACION ( CODIGO_TIPO_ASOCIADO == "PENSIONADO",NOMINA_ASOCIADO == "NOMINA1"  ) 
+	    CLIENTE_SOCIOECONOMICA(CODIGO_ACTIVIDAD_ECONOMICA_CLIENTE=="" ) 
+	    CLIENTE_INFO_LABORAL( SALARIO_INTEGRAL_CLIENTE=="")
+	then
+//Prospecto_detallado es la misma CONDICIONES_SUGERIDAS_PROSPECT 	
+		modify( Prospecto_detallado ) {
+				setCODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO( "SALARIO_CONVENIO" )
+//esta accion retorna una lista de origen de ingresos 
+//pero en la tabla se guarda una sola porque se hace explosion por cada una de ellas
+		}
+end
+
+rule "VARIABLES_SOLIC_CREDITO"
+    salience 48
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_MEDIO_PAGO_PROSPECTO_SUGERIDO=="101",
+	                          CODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO=="SALARIO_CONVENIO")
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_TIPO_AMORTIZACION_SIMULAR_PROSPECTO_SUGERIDO("AC"),
+				setTIPO_AMORTIZACION_PROBABLE_PROSPECTO_SUGERIDO("AC","CI"), //lista
+				setCODIGO_MANEJA_INCREMENTOS_PROSPECTO_SUGERIDO("NA"),
+				setMANEJA_EXTRAORDINARIA_PROSPECTO_SUGERIDO("SI"),
+				setOPORTUNIDAD_PAGO_INTERES_CREDITO("V"),
+				setCODIGOPERIODICIDAD_INTERES_ABONO_FIJO_CREDITO("AC"),
+				setCODIGO_TIPO_TASA_CREDITO("F"),
+				setCODIGO_FACTOR_VARIACION_TASA("")
+		}
+end
+
+rule "PERIODICIDAD_INCRE_SOLIC_CREDITO"
+    salience 47
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_PERIODICIDAD_ORDINARIA_PROSPECTO_SUGERIDO=="1") 
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_PERIODICIDAD_INCREMENTO_PROBABLE_PROSPECTO_SUGERIDO("AC")   
+				//Es una lista con las periodicidades de incremento
+		}
+end
+
+rule "VENCIMIENTO_CONDICIONES_SOLIC_CREDITO"
+    salience 46
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_CICLO_PAGO_SIMULAR_PROSPECTO_SUGERIDO=="NOMINA-MENSUAL")
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+	    CLIENTE_VINCULACION ( CODIGO_TIPO_ASOCIADO == "PENSIONADO" )
+	    
+	then    
+		modify( Prospecto_detallado ) {
+				set("")   
+				//VENCIMIENTO_VARIABLE no se definio en el objeto de datos, no se requiere solo para el calculo
+				//DIA_VENCIMIENTO_FIJO
+				//DIAS_ATRAS_CORTE_NOVEDADES 
+		}
+end
+
+rule "VENCIMIENTO_FIJO_SOLIC_CREDITO"
+    salience 45
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_CICLO_PAGO_SIMULAR_PROSPECTO_SUGERIDO=="NOMINA-MENSUAL")
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+	    CLIENTE_VINCULACION ( CODIGO_TIPO_ASOCIADO == "PENSIONADO" )
+	    
+	then    
+		modify( Prospecto_detallado ) {
+				set("")   
+				//DIA_VENCIMIENTO no se definio en el objeto de datos, no se requiere
+				//MES_VENCIMIENTO
+		}
+end
+
+rule "VENCIMIENTO_EXCEPCION_SOLIC_CREDITO"
+    salience 44
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto : PROSPECTO_SOLICITUD_CREDITO( ) 
+	    // se requiere la fecha FECHA_SOLICITUD_PROSPECTO_SOLICITUD_CREDITO
+	    //para compararla con la fecha de corte de novedades que es hecho en esta regla y no esta 
+	    //en ningún objeto de datos
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_CICLO_PAGO_SIMULAR_PROSPECTO_SUGERIDO=="NOMINA-MENSUAL")
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+	    CLIENTE_VINCULACION ( CODIGO_TIPO_ASOCIADO == "PENSIONADO" )
+	    
+	then    
+		modify( Prospecto_detallado ) {
+				set("")   
+				//DIAS_CORTE_NOVEDADES  no se definio en el objeto de datos, no se requiere
+				
+		}
+end
+
+rule "INTERESES_AJUSTE_CICLO_SOLIC_CREDITO"
+    salience 43
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA")
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_INTERESES_AJUSTE_CICLO("L")   
+				// No estaba como atributo en el diseño inicial de la entidad
+				
+		}
+end
+
+rule "RECOGER_OBLIGATORIO_CREDITO_SOLIC_CREDITO"
+    salience 42
+    ruleflow-group "Independiente-Secuencial"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA")
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_LINEA_CREDITO_RECOGER("")   
+				//  Es una lista de valores. No estaba como atributo en el diseño inicial de la entidad
+		}
+end
+
+rule "PLAZO_MESES_SOLIC_CREDITO"
+    salience 41
+    ruleflow-group "calculo-itera"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1",
+	                          CODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO=="SALARIO_CONVENIO",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000)
+	then    
+		modify( Prospecto_detallado ) {
+				setPLAZO_MINIMO_PROBABLE_PROSPECTO_SUGERIDO(36), 
+				setPLAZO_MAXIMO_PROBABLE_PROSPECTO_SUGERIDO(90) 
+		}
+end
+
+rule "CALIFICACION_GARANTIA_SOLIC_CREDITO"
+    salience 40
+    ruleflow-group "calculo-itera"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1",
+	                          VALOR_DESCUBIERTO_PROSPECTO_SUGERIDO>=0 && <= 70,FACTOR_DESCUBIERTO_PROSPECTO_SUGERIDO>=0 && <= 6 )
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+        CLIENTE_SOCIOECONOMICA(CODIGO_ACTIVIDAD_ECONOMICA_CLIENTE=="" )
+        CLIENTE_INFO_LABORAL( CODIGO_TIPO_CONTRATO_CLIENTE=="FIJO",FECHA_INGRESO_EMPRESA>="01/01/1980" && <="12/31/1980" )
+//este atributo no se ha creado en la entidad        
+        CLIENTE_VINCULACION (ANTIGÜEDAD_DIAS_ASOCIADO>=360 && <= 720 ) 
+	then    
+		modify( Prospecto_detallado ) {
+				setCALIFICACION_GARANTIA_PROSPECTO_SUGERIDO_PROSPECTO_SUGERIDO("") 
+		}
+end
+
+rule "TASA_NAMV_SOLIC_CREDITO"
+    salience 39
+    ruleflow-group "calculo-itera"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          PLAZO_SIMULAR_PROSPECTO_SUGERIDO>=12 && <=36,CALIFICACION_GARANTIA_PROSPECTO_SUGERIDO_PROSPECTO_SUGERIDO=="")
+	then    
+		modify( Prospecto_detallado ) {
+				setTASA_NAMV_PROBABLE_PROSPECTO_SUGERIDO (12.5,18.5)
+				//la acción es una lista de tasas
+		}
+end
+
+rule "CARGOSYDESCTOS_SOLIC_CREDITO"
+    salience 38
+    ruleflow-group "calculo-itera"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO=="SALARIO_CONVENIO",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          PLAZO_SIMULAR_PROSPECTO_SUGERIDO>=12 && <=36,
+	                          TASA_NAMV_SIMULAR_PROSPECTO_SUGERIDO>=6 && <=20,
+	                          NETO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000)
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_DESCUENTO_CARGO_PROSPECTO_SUGERIDO ("")
+				//la acción es una lista de códigos de descuentos
+		}
+end
+
+rule "CONDICIONES_CALCULO_CARGOSYDESCTOS_SOLIC_CREDITO"
+    salience 37
+    ruleflow-group "calculo-itera"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO=="SALARIO_CONVENIO",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          PLAZO_SIMULAR_PROSPECTO_SUGERIDO>=12 && <=36,
+	                          TASA_NAMV_SIMULAR_PROSPECTO_SUGERIDO>=6 && <=20,
+	                          NETO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          CODIGO_DESCUENTO_CARGO_PROSPECTO_SUGERIDO=="CHEQUE")
+	then   
+//otra entidad PROSPECTO_DESCUENTO_CARGO llave No.Prospecto,codigo descuento	
+		modify( Prospecto_detallado ) {
+				setCODIGO_BASE_DESCUENTO_PROSPECTO("M")
+			    setPORCENTAJE_DESCUENTO_PROSPECTO(0.50)
+			    setVALOR_ABSOLUTO_DESCUENTO_PROSPECTO(0)
+				setTIPO_DESCUENTO_OBLIGATORIO_PROSPECTO("Y")
+		}
+end
+
+rule "OTROS_CONCEPTOS_CUOTA_SOLIC_CREDITO"
+    salience 36
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          PLAZO_SIMULAR_PROSPECTO_SUGERIDO>=12 && <=36 )
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_OTROS_CONCEPTOS_CUOTA("")
+				//Lista de dominios.  No estaba como atributo en el diseño inicial de la entidad
+		}
+end
+
+rule "SEGURO_VIDA_SOLIC_CREDITO"
+    salience 35
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",
+	                          MONTO_CREDITO_PROSPECTO_SUGERIDO>=1000000 && <= 2000000,
+	                          PLAZO_SIMULAR_PROSPECTO_SUGERIDO>=12 && <=36 )
+//COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+        CLIENTE(EDAD_CLIENTE>=25 && <=40, FACTOR_RIESGO_SEGURO_VIDA=="" )
+   // falta factor riesgo seguro de vida no se ha creado en la entidad     
+	then    
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO	
+		modify( Prospecto_detallado ) {
+				setPORCENTAJE_OTRO_CONCEPTO("")
+			    setBASE_CALCULO_OTRO_CONCEPTO("")
+		}
+end
+
+rule "CAPITALIZACION_PORCENTAJE_SOLIC_CREDITO"
+    salience 34
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then  
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO		
+		modify( Prospecto_detallado ) {
+			    setPORCENTAJE_OTRO_CONCEPTO("")
+		}
+end
+
+rule "CAPITALIZACION_VALOR_SOLIC_CREDITO"
+    salience 33
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then   
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO	
+		modify( Prospecto_detallado ) {
+				setPORCENTAJE_OTRO_CONCEPTO("")
+				setBASE_CALCULO_OTRO_CONCEPTO("")
+			    setVALOR_ABSOLUTO_TOTAL_OTRO_CONCEPTO("")
+		}
+end
+
+rule "INMUEBLE_PORCENTAJE_SOLIC_CREDITO"
+    salience 32
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then  
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO	
+		modify( Prospecto_detallado ) {
+			    setPORCENTAJE_OTRO_CONCEPTO("")
+				setBASE_CALCULO_OTRO_CONCEPTO("")
+		}
+end
+
+rule "INMUEBLE_VALOR_SOLIC_CREDITO"
+    salience 31
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then   
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO		
+		modify( Prospecto_detallado ) {
+			    setPORCENTAJE_OTRO_CONCEPTO("")
+				setBASE_CALCULO_OTRO_CONCEPTO("")
+			    setVALOR_ABSOLUTO_TOTAL_OTRO_CONCEPTO("")
+		}
+end
+
+rule "SEGURO_DESEMPLEO_SOLIC_CREDITO"
+    salience 30
+    ruleflow-group "otros_conceptos_calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then    
+//Inserta el objeto de datos PROSPECTO_OTRO_CONCEPTO	
+		modify( Prospecto_detallado ) {
+				setPORCENTAJE_OTRO_CONCEPTO("")
+		}
+end
+
+rule "TIPO_CALCULO_CUPO_SOLIC_CREDITO"
+    salience 29
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+	    Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA" )
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_TIPO_CUPO_PROSPECTO_SUGERIDO("")
+			    //Es una lista de códigos 
+			    
+		}
+end
+
+rule "DEPOSITOS_PERMANENTES_APALANCAMIENTO"
+    salience 28
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+        //COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+        Cliente_Vinculacion : CLIENTE_VINCULACION( )
+        //falta saber que atributos
+	then    
+		modify( Prospecto_detallado ) {
+				set("")
+			    //TIPO_DOCUMENTO_SOPORTE no se encuentra en alguna entidad 
+			    
+		}
+end
+
+rule "TIPO_SALDO_CUPO_SOLIC_CREDITO"
+    salience 27
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+        ATRIBUTOS_CUPO_LINEA( CODIGO_LINEA_ANALISIS=="LINEA",CLASE_CUPO=="ENG")
+	then    
+		modify( ATRIBUTOS_CUPO_LINEA ) {
+				setTIPO_SALDO_OBLIGACION("ST")
+			    setCONCEPTO_SALDO_OBLIGACION("K")
+		}
+end
+
+rule "NUMERO_VECES_APALANCAMIENTO_SOLIC_CREDITO"
+    salience 26
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+        Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1",CODIGO_MEDIO_PAGO_PROSPECTO_SUGERIDO=="101")
+	then    
+		modify( Prospecto_detallado ) {
+				setNUMERO_VECES_APALANCAMIENTO_PROSPECTO_SUGERIDO(2)
+		}
+end
+
+
+rule "ENDEUDAMIENTO_GLOBAL_SOLIC_CREDITO"
+    salience 25
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+        Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1")
+	then    
+		modify( Prospecto_detallado ) {
+				set("")
+				//LINEA_CREDITO_ENDEUDAMIENTO Lista de valores
+				//VALOR_TOPE_ENDEUDAMIENTO
+		}
+end
+
+rule "TOPE_MAXIMO_SOLIC_CREDITO"
+    salience 24
+    ruleflow-group "cupo-calculo"
+    lock-on-active true
+	dialect "mvel"
+	when
+        Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_TEMPORADA_PROSPECTO_SUGERIDO=="TEMPORADA1")
+	then    
+		modify( Prospecto_detallado ) {
+				set("")
+				//VALOR_TOPE_MINIMO
+				//VALOR_TOPE_MAXIMO
+		}
+end
+
+rule "ORIGEN_INGRESOS_EXTRAORDINARIA_SOLIC_CREDITO"
+    salience 23
+    ruleflow-group "calculo-final"
+    lock-on-active true
+	dialect "mvel"
+	when
+        Prospecto_detallado : CONDICIONES_SUGERIDAS_PROSPECT(CODIGO_LINEA_PROSPECTO_SUGERIDO =="LINEA",CODIGO_ORIGEN_INGRESOS_PROSPECTO_SUGERIDO== "SALARIO_CONVENIO")
+        //COMO CONECTO LAS ENTIDADES CLIENTES SI EL K_IDTERC NO SE ENCUENTRA COMO ATRIBUTO
+//DE LAS ENTIDADES ES LA LLAVE PRIMARIA	    
+	    CLIENTE_VINCULACION ( CODIGO_TIPO_ASOCIADO == "PENSIONADO",NOMINA_ASOCIADO == "NOMINA1"  ) 
+	    CLIENTE_SOCIOECONOMICA(CODIGO_ACTIVIDAD_ECONOMICA_CLIENTE=="" ) 
+	    CLIENTE_INFO_LABORAL( SALARIO_INTEGRAL_CLIENTE=="")
+
+	then    
+		modify( Prospecto_detallado ) {
+				setCODIGO_ORIGEN_INGRESOS_EXTRAORDINARIA_PROSPECTO("")
+				//Es una lista. No estaba como atributo en el diseño inicial de la entidad	
+		}
+end
+
+
+
+
+
+
+
+
+

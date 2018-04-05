@@ -1,0 +1,88 @@
+<scenario>
+  <name>LineaTest.scenario</name>
+  <maxRuleFirings>100000</maxRuleFirings>
+  <globals/>
+  <fixtures>
+    <org.drools.workbench.models.testscenarios.shared.ActivateRuleFlowGroup>
+      <name>Linea</name>
+    </org.drools.workbench.models.testscenarios.shared.ActivateRuleFlowGroup>
+    <fact-data>
+      <type>PROSPECTO_SOLICITUD_CREDITO</type>
+      <fieldData>
+        <field-data>
+          <name>CODIGO_DESTINO_DINERO_PROSPECTO_SOLICITUD_CREDITO</name>
+          <value>VIVIENDA NUEVA</value>
+          <nature>4</nature>
+        </field-data>
+        <field-data>
+          <name>CODIGO_ROL_ACTOR_PROSPECTO_SOLICITUD_CREDITO</name>
+          <value>Asociado</value>
+          <nature>4</nature>
+        </field-data>
+      </fieldData>
+      <name>Prospecto</name>
+      <isModify>false</isModify>
+    </fact-data>
+    <fact-data>
+      <type>PROSPECTO_SOLICITUD_CREDITO</type>
+      <fieldData>
+        <field-data>
+          <name>CODIGO_DESTINO_DINERO_PROSPECTO_SOLICITUD_CREDITO</name>
+          <value>LIBRE INVERSION</value>
+          <nature>4</nature>
+        </field-data>
+        <field-data>
+          <name>CODIGO_ROL_ACTOR_PROSPECTO_SOLICITUD_CREDITO</name>
+          <value>Funcionario</value>
+          <nature>4</nature>
+        </field-data>
+      </fieldData>
+      <name>Prospecto1</name>
+      <isModify>false</isModify>
+    </fact-data>
+    <execution-trace>
+      <executionTimeResult>44</executionTimeResult>
+      <numberOfRulesFired>2</numberOfRulesFired>
+    </execution-trace>
+    <expect-fact>
+      <fieldValues>
+        <expect-field>
+          <fieldName>CODIGO_LINEA_PROSPECTO_SOLICITUD_CREDITO</fieldName>
+          <expected>VIVIENDA</expected>
+          <actualResult>VIVIENDA</actualResult>
+          <successResult>true</successResult>
+          <explanation>[Prospecto] field [CODIGO_LINEA_PROSPECTO_SOLICITUD_CREDITO] was [VIVIENDA].</explanation>
+          <operator>==</operator>
+          <nature>1</nature>
+        </expect-field>
+      </fieldValues>
+      <name>Prospecto</name>
+      <anonymous>false</anonymous>
+    </expect-fact>
+    <expect-fact>
+      <fieldValues>
+        <expect-field>
+          <fieldName>CODIGO_LINEA_PROSPECTO_SOLICITUD_CREDITO</fieldName>
+          <expected>LIBRE INVERSION</expected>
+          <actualResult></actualResult>
+          <successResult>true</successResult>
+          <explanation>[Prospecto1] field [CODIGO_LINEA_PROSPECTO_SOLICITUD_CREDITO] was [LIBRE INVERSION].</explanation>
+          <operator>==</operator>
+          <nature>1</nature>
+        </expect-field>
+      </fieldValues>
+      <name>Prospecto1</name>
+      <anonymous>false</anonymous>
+    </expect-fact>
+  </fixtures>
+  <lastRunResult>2018-03-29 00:11:56.713 UTC</lastRunResult>
+  <rules/>
+  <inclusive>true</inclusive>
+  <packageName>com.selsa.credito.condicion_credito</packageName>
+  <imports>
+    <imports/>
+  </imports>
+  <ksessions>
+    <string>defaultKieSession</string>
+  </ksessions>
+</scenario>
